@@ -1,0 +1,88 @@
+---
+title: "Homework 5"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 10
+
+```{r}
+# Relevant difference
+d <- 13
+
+# Sample standard deviations
+s_A <- 15
+s_B <- 18
+
+# Type 1 and type 2 error
+a <- 0.025
+b <- 0.1
+```
+
+Since the size of the two groups will be the same we can get the pooled variance by taking the mean of the two sample variances.
+
+```{r}
+# Pooled standard deviation
+s_p <- sqrt((s_A^2 + s_B^2) / 2)
+cat(sprintf("s_p: %s", s_p), "\n")
+
+# Quantiles of normal distribution
+u_a <- qnorm(1-a)
+u_b <- qnorm(1-b)
+cat(sprintf("u_a: %s, u_b: %s", u_a, u_b), "\n")
+
+# Sample size estimation for one-sided t-test, rounded up for conservative approach
+n <- ceiling(2 * (u_a + u_b)^2 * s_p^2 / d^2)
+cat(sprintf("We need %s patients total, %s per group.", 2*n, n))
+```
+
+\newpage
+
+# Exercise 11
+
+We do a Kolmogorov-Smirnov test to check for normality.
+
+```{r}
+mydata <- c(3,4,5,6,7)
+
+Sn <- c(0.2, 0.4, 0.6, 0.8, 1)
+Sn_shift <- c(0, 0.2, 0.4, 0.6, 0.8)
+
+F0 <- pnorm(mydata, mean=3, sd=2)
+
+test_statistic <- max( c(max(abs(Sn - F0)), max(abs(Sn_shift - F0))) )
+cat(sprintf("Test statistic sup|Sn(x) - F0(x)| = %s", test_statistic), "\n")
+
+# We get the critical value from the table, for n=5 and alpha=0.1
+critical_value <- 0.509
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot"))
+```
+
+\newpage
+
+# Exercise 12
+
+Here we do a Lilliefors test to check for normality.
+
+```{r}
+mydata <- c(3,4,5,6,7)
+
+Sn <- c(0.2, 0.4, 0.6, 0.8, 1)
+Sn_shift <- c(0, 0.2, 0.4, 0.6, 0.8)
+
+F0 <- pnorm(mydata, mean=mean(mydata), sd=sd(mydata))
+
+test_statistic <- max( c(max(abs(Sn - F0)), max(abs(Sn_shift - F0))) )
+cat(sprintf("Test statistic sup|Sn(x) - F0(x)| = %s", test_statistic), "\n")
+
+# We get the critical value from the table, for n=5 and alpha=0.1
+critical_value <- 0.315
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot"))
+```

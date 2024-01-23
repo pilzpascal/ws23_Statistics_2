@@ -1,0 +1,92 @@
+---
+title: "Homework 8"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 19
+
+Since we have 25 samples and we have one of fields is less than 5, we use Fisher's exact test.
+
+```{r}
+data <- matrix(c(4, 5, 13, 3), 2, 2)
+fisher.test(data)
+```
+
+We can see that there is no significant difference.
+
+\newpage
+
+# Exercise 20
+
+```{r}
+data <- matrix(c(5, 1, 2, 6), 2, 2)
+```
+
+We want to compare the asymptotic Chi-square test, Chi-square with Yate's correction, and exact Fisher test.
+
+Since we have a sample size of XX and cells with values of less than 5 we already know that the assumption of the Chi-square test are violated.
+
+## Chi-square
+
+```{r}
+chisq.test(data, correct=FALSE)
+```
+
+## Chi-square with Yate's correction
+
+```{r}
+chisq.test(data, correct=TRUE)
+```
+
+## Fiher's exact test
+
+```{r}
+fisher.test(data)
+```
+
+## Conclusion
+
+As we can, the p-value for the corrected Chi-square test and Fisher's exact test are quite close, whereas the uncorrected Chi-square test produces a drastically different result.
+
+\newpage
+
+# Exercise 21
+
+```{r}
+p <- 100
+n <- 200
+
+pre <- p / (p + n)
+
+tp <- 90
+fp <- 30
+tn <- 170
+fn <- 10
+
+se <- tp / p
+sp <- tn / n
+
+ppv_1 <- tp / (tp + fp)
+ppv_2 <- (se * pre) / (se * pre + (1 - sp) * (1 - pre))
+
+npv_1 <- tn / (tn + fn)
+npv_2 <- (sp * (1 - pre)) / (sp * (1 - pre) + (1 - se) * pre)
+
+cat(sprintf(" sensitivity: %.3f\n", se),
+    sprintf("specificity: %.3f\n", sp),
+    "\n",
+    sprintf("positive predictive value (excluding prevelance): %.3f\n", ppv_1),
+    sprintf("positive predictive value (including prevelance): %.3f\n", ppv_2),
+    "\n",
+    sprintf("negative predictive value (excluding prevelance): %.3f\n", npv_1),
+    sprintf("negative predictive value (including prevelance): %.3f\n", npv_2))
+```
+
+
+

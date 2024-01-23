@@ -1,0 +1,175 @@
+---
+title: "Homework 4"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 8
+
+```{r}
+A <- c(7.2,7.7,8.0,8.1,8.3,8.4,8.4,8.5,8.6,8.7,9.1,9.1,9.1,9.8,10.1,10.3)
+B <- c(8.1,9.2,10.0,10.4,10.6,10.9,11.1,11.9,12.0,12.1)
+
+n <- length(A)
+m <- length(B)
+
+alpha <- 0.05
+
+mean_A <- sum(A)/n
+mean_B <- sum(B)/m
+
+s_A <- sqrt( sum(A^2)/n - mean_A^2 )
+s_B <- sqrt( sum(B^2)/m - mean_B^2 )
+
+cat(sprintf("sample variance A: %.3f, sample variance B: %.3f", s_A, s_B))
+```
+
+## F-test
+
+We want to perform an $F$-test to see if the "true" variances differ.
+
+For this, we formula the hypothesis:
+
+-   $H_0$: $\sigma_A^2 = \sigma_B^2$
+-   $H_1$: $\sigma_A^2 \neq \sigma_B^2$
+
+With the test statistic $F(x,y) = s_x^2 / s_y^2$ for $s_x^2 > s_y^2$ and the critical value $F_{n_x-1, n_y-1, 1-\alpha}$.
+
+We have that that $s_A < s_B$, thus we have the test statistic $F = s_B^2 / s_A^2$.
+
+```{r}
+test_statistic <- s_B^2 / s_A^2
+critical_value <- qf(1-alpha, m-1, n-1)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            df(test_statistic, m-1, n-1)))
+```
+
+## Levene-test
+
+I choose to use the mean to calculate the spread, just to make things easier.
+
+```{r}
+z_A <- abs(A - mean_A)
+mean_z_A <- sum(z_A)/n
+
+z_B <- abs(B - mean_B)
+mean_z_B <- sum(z_B)/m
+
+z <- sum(c(z_A, z_B)) / (n+m)
+
+test_statistic <- ( (n+m-2) * (n*(mean_z_A - z)^2 + m*(mean_z_B - z)^2) ) /
+  ( sum((z_A - mean_z_A)^2) + sum((z_B - mean_z_B)^2) )
+critical_value <- qf(1-alpha, 1, n+m-2)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot" ))
+
+suppressMessages(library(car))
+suppressWarnings(
+cat(sprintf("p-value of: manual implementation %.3f, package 'car' %.3f",
+            1 - pf(test_statistic, 1, n+m-2),
+            leveneTest(c(A,B), c(rep(0, n), rep(1, m)), center="mean")$`Pr(>F)`[1]))
+)
+```
+
+## Test to verify if there is a difference between the "true means"
+
+Since both $F$-test and Levene-test cannot reject the null hypothesis, we can assume homoscedasticity.
+
+We will perform an independent two-sample t-test:
+```{r}
+s_p <- sqrt( ((n-1)*(s_A^2) + (m-1)*(s_B^2)) / (n+m-2) )
+
+test_statistic <- abs(mean_A - mean_B) * sqrt(n*m/n+m) / s_p
+
+critical_value <- qt(1-(alpha/2), n+m-2)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            dt(test_statistic, n+m-2)))
+```
+
+## Confidence interval for difference of "true means"
+
+```{r}
+val <- qt(1-(alpha/2), n+m-2) * s_p * sqrt(1/n + 1/m)
+
+cat(sprintf("The true difference of the means is with %.f%% in [%.3f, %.3f]",
+            (1-alpha)*100, mean_A-mean_B - val, mean_A-mean_B + val))
+```
+
+\newpage
+
+# Example 9
+
+```{r}
+mean_A <- 22.13
+mean_B <- 18.68
+
+s_A <- 3.74
+s_B <- 1.21
+
+n <- 8
+m <- 6
+```
+
+## Homoscedasticity
+
+First we conduct an F-test to see whether we can assume homoscedasticity.
+
+```{r}
+test_statistic <- s_A^2 / s_B^2
+critical_value <- qf(0.95, n-1, m-1)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            df(test_statistic, m-1, n-1)))
+```
+
+## Test for difference of means
+
+As we can see, we cannot assume homoscedasticity. Therefore, we use Welch's two-sample t-test:
+
+```{r}
+Z_A <- ( ((s_A^2)/n) / ((s_A^2)/n + (s_B^2)/m) )^2 / (n-1)
+Z_B <- ( ((s_B^2)/n) / ((s_A^2)/n + (s_B^2)/m) )^2 / (m-1)
+df <- 1 / (Z_A + Z_B)
+
+cat(sprintf("Z_A %.5f, Z_B %.5f, df %.2f", Z_A, Z_B, df))
+
+test_statistic <- (mean_A - mean_B) / sqrt(s_A^2/n + s_B^2/m)
+critical_value <- qt(1-(0.05/2), df)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            dt(test_statistic, df)))
+```
+
+
+
+
+
+
+

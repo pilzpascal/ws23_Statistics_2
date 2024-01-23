@@ -1,0 +1,143 @@
+---
+title: "Homework 6"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 13
+
+```{r}
+x <- c(13,14,12,11,16,16,17,20,20,21)
+n <- length(x)
+
+m <- mean(x)
+s <- sd(x)
+
+print(sprintf("mean %.3f, std %.3f", m, s))
+
+ref_val <- 14
+a <- 0.05
+b <- 0.2
+```
+
+Since we want to know whether there is a difference, we use a two-sided one-sample t-test.
+
+```{r}
+ua <- qnorm(1-a/2)
+ub <- qnorm(1-b)
+cat(sprintf("u(1-a/2) %.3f, u(1-b) %.3f", ua, ub), "\n")
+
+d <- m - ref_val
+
+n <- (ua+ub)^2 * s^2 / d^2
+cat(sprintf("We need %s samples.", ceiling(n)))
+```
+
+\newpage
+
+# Exercise 14
+
+```{r}
+A <- sort(c(11,37,32,27,29,29,27,31,14))
+B <- sort(c(52,38,51,48,49,52,28,17,16))
+
+boxplot(A, B, names=c("A", "B"))
+```
+
+## Check for normality
+
+First we check if our data is normally distributed. For this, we use a Lilliefors test.
+
+```{r}
+ma <- mean(A)
+sa <- sd(A)
+S <- 1:length(A) / length(A)
+S_shift <- c(0, 1:(length(A)-1)/length(A))
+F0 <- pnorm(A, ma, sa)
+
+test_statistic <- max(max(abs(S-F0)), max(abs(S_shift-F0)))
+critical_value <- 0.249
+cat(sprintf("Test statistic %s", test_statistic), "\n")
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot"))
+```
+
+Since `A` is not normally distributed we forgo checking `B` and immediately go over to using a non parametric test. I am not sure if this is correct, since we do have ties in both groups and therefore the KS test should maybe not be used. We can also a QQ-plot:
+
+```{r}
+qqnorm(A)
+qqline(A)
+```
+
+## Test
+
+We use a Mann-Whitney-U Test. We need to use the exact MWU test because we have ties
+
+```{r}
+#install.packages("coin")
+library(coin)
+
+data<-c(A,B)
+group<-as.factor(c(rep("A",length(A)),rep("B",length(B))))
+wilcox_test(data~group,distribution = "exact")
+```
+
+This indicates that we cannot reject the null hypothesis.
+
+\newpage
+
+# Exercise 15
+
+```{r, fig.show="hold", out.width="50%"}
+A <- c(54.5,60.4,85.6,78.2,120.6,121)
+B <- c(55.5,69.6,86.7,81.6,116.5,115)
+```
+
+We know that normality of the data cannot be assumed. Therefore, we use a Wilcoxon Test for paired data.
+
+## Manual Wilcoxon Test
+
+```{r}
+d <- A - B
+
+df <- data.frame(difference=d, rank=rank(abs(d)))
+print(df)
+
+df <- df[df$difference!=0,]
+pos_rank_sum <- sum(df$rank[df$difference>0])
+neg_rank_sum <- sum(df$rank[df$difference<0])
+cat(sprintf("positive rank sum %s", pos_rank_sum), "\n")
+cat(sprintf("negative rank sum %s", neg_rank_sum), "\n")
+
+test_statistic <- min(pos_rank_sum, neg_rank_sum)
+cat(sprintf("test statistic %s", test_statistic), "\n")
+critical_value <- 0
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic <= critical_value) "can" else "cannot"))
+```
+
+## Implemented Test
+
+```{r}
+wilcox.test(A,B,paired=TRUE,correct=FALSE)
+wilcoxsign_test(A~B,distribution = "exact",zero.method="Wilcoxon")
+wilcoxsign_test(A~B,distribution = "asymptotic",zero.method="Wilcoxon")
+wilcoxsign_test(A~B,distribution = approximate(nresample = 10000),zero.method="Wilcoxon")
+```
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,107 @@
+---
+title: "Homework 10"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 24
+
+```{r}
+a <- 15
+b <- 10
+c <- 5
+d <- 10
+
+n <- a + b + c + d
+```
+
+## a) Measure of agreement
+
+We calculate Cohen's Kappa.
+
+```{r}
+p_e   <- (a+b)/n * (a+c)/n + (c+d)/n * (b+d)/n
+p_a   <- (a+d)/n
+kappa <- (p_a-p_e) / (1-p_e)
+cat(sprintf("p_e: %.3f, p_a: %.3f, kappa: %.3f", p_e, p_a, kappa))
+```
+
+This means we have "fair agreement".
+
+## b) Statistically relevant difference
+
+We use the exact McNemar test.
+
+```{r}
+r <- min(b,c)
+p <- 2 * sum(choose(b+c, 0:r) * 0.5^(b+c))
+
+cat(sprintf("p-value: %.3f", p))
+```
+
+We can see that there is no significant difference.
+
+\newpage
+
+# Exercise 25
+
+```{r}
+X <- c(10,8,3,4,1,5,9,2,6,6)
+Y <- c(7,9,5,3,2,6,10,1,4,8)
+
+n <- length(X)
+```
+
+## a) Bravais-Pearson correlation coefficient
+
+```{r}
+r <- cov(X,Y) / (sd(X) * sd(Y))
+cat(sprintf("r: %.3f", r))
+```
+
+## Test to verify statistical significance
+
+## b) Test for statistical signifance
+
+Since we only want to know whether there is a significant correlation, we can use the "Exact Test for No Linear Correlation" test.
+
+```{r}
+test_stat <- r * sqrt((n-2)/(1-r^2))
+cat(sprintf("test statistic: %.3f, significant value: %.3f, ",
+            test_stat, qt(0.975, n-2)))
+```
+
+We can see that there is a significant difference from 0.
+
+\newpage
+
+# Exercise 26
+
+We use the "Tests of Correlation Coefficients I" test. For this, we first perform a Fisher z-transformation.
+
+```{r}
+n  <- 100
+r1 <- 0.62
+r2 <- 0.36
+
+z1 <- 0.5 * log((1+r1) / (1-r1))
+z2 <- 0.5 * log((1+r2) / (1-r2))
+
+test_stat <- (z1 - z2) / sqrt(2/(n-3))
+
+cat(sprintf("z1: %.3f, z2: %.3f, test statistic: %.3f, critical value: %.3f",
+            z1, z2, test_stat, qnorm(0.975)))
+```
+
+This means that we can reject the null hypothesis.
+
+
+
+
+
+

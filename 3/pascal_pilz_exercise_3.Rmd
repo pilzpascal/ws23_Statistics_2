@@ -1,0 +1,103 @@
+---
+title: "Homework 3"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Example 6
+
+We have a sample of 11 persons, 2 of which smoke. We want to calculate two different 90% confidence intervals.
+
+```{r}
+alpha <- 0.1
+q <- 1 - (alpha/2)
+n <- 11
+k <- 2
+p <- k/n
+print(sprintf("p: %.3f, n*p*(1-p): %.3f", p, n*p*(1-p)))
+```
+
+## a) 90% asymtotic confidence interval for the true proportion of smokers
+
+First we get the point estimator $\hat{\pi}$ given by $\hat{\pi} = p = \frac{k}{n}$, then we use the formula found in the slides to calculate the confidence interval for $\alpha = 0.1$:
+```{r}
+val <- qnorm(q) * sqrt(p*(1-p)/n)
+conf_lower <- p - val
+conf_upper <- p + val
+print(sprintf("P(true proportion in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+As we can see, the result is not very convincing.
+
+## b) 90% exact confidence interval for the true proportion of smokers
+
+For this we use formula found on slide 14, which involves the $F$-distribution:
+```{r}
+conf_lower <- k / (k + (n-k+1) * qf(q, 2*(n-k+1), 2*k))
+conf_upper <- (k+1) * qf(q, 2*(k+1), 2*(n-k)) /
+              ((n-k) + (k+1) * qf(q, 2*(k+1), 2*(n-k)))
+print(sprintf("P(true proportion in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+
+
+\newpage
+
+# Example 7
+
+We have the following number of bacteria per sample taken for 10 different sample:
+
+```{r}
+x <- c(13,14,12,11,16,16,17,20,20,21)
+n <- length(x)
+
+sample_mean <- mean(x)
+sample_std <- sd(x)
+
+print(sprintf("mean %.3f, std %.3f", sample_mean, sample_std))
+```
+
+## a) 95% confidence interval for the true mean
+
+```{r}
+alpha <- 0.05
+t <- qt(1-(alpha/2), n-1)
+
+val <- t * sample_std / sqrt(n)
+
+conf_lower <- sample_mean - val
+conf_upper <- sample_mean + val
+
+print(sprintf("P(true mean in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+## b) test if "true mean" differs from $\mu_0 = 14$
+
+We want to construct a test that checks whether the "true mean" $\mu$ of bacteria count differs from $\mu_0 = 14$. We want to use a type I error of 5%, we can assume normality.
+
+For this, let us define the following:
+
+- Null hypothesis $H_0$: $\mu = \mu_0$
+- Alternative hypothesis $H_1$: $\mu \neq \mu_0$
+
+What we want to verify is that the true mean differs from 14, thus we want to verify the alternative hypothesis. For this, we show that the null hypothesis can be rejected. 
+
+In our example, a one-sample t-test is appropriate:
+
+```{r}
+crit_val <- qt(1-(alpha/2), n-1)
+test_stat <- abs(sqrt(n)*(sample_mean-14)/sample_std)
+
+print(sprintf("critical value: %.3f, test statistic: %.3f",
+              crit_val, test_stat))
+```
+
+Since the critical value is greater than the test statistic, we cannot reject the null hypothesis.

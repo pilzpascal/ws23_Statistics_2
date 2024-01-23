@@ -1,0 +1,113 @@
+---
+title: "Homework 13"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 32
+
+```{r}
+A <- c(80, 77, 71, 72, 75)
+B <- c(84, 74, 81, 80, 79)
+C <- c(76, 76, 74, 73, 74)
+
+n <- 5
+k <- 3
+```
+
+## Hypothesis
+
+Since we want to know if there is a global difference over time, we formulate the hypothesis as such:
+
+- $H_0$: $\mu_{A} = \mu_{B} = \mu_{C}$
+- $H_1$: $\mu_{A} \neq \mu_{B}$ or $\mu_{A} \neq \mu_{C}$ or $\mu_{B} \neq \mu_{C}$
+
+## Statistical test
+
+We perform a one-way repeated measures ANOVA (rANOVA). For this, we first check the assumption of sphericity (normality can already be assumed).
+
+### Sphericity
+
+To test for sphericity via a Mauchly's test.
+
+```{r}
+# Building an appropriate Data-Frame for Mauchly’s Test
+patid <- as.factor(c(seq(1:5), seq(1:5), seq(1:5)))
+time  <- c(rep("A", length(A)), rep("B", length(B)), rep("C", length(C)))
+bpm   <- c(A, B, C)
+df    <- data.frame(patid, time, bpm)
+View(df)
+
+# Mauchly's Test of Sphericity
+bpm_matrix <- matrix(bpm, nrow=5, ncol=3)
+mauchly.test(lm(bpm_matrix~1), X=~ 1)
+```
+
+As we can see, we can assume sphericity.
+
+### rANOVA
+
+```{r}
+m_grand <- mean(c(A, B, C))
+
+# group means
+m_A <- mean(A)
+m_B <- mean(B)
+m_C <- mean(C)
+
+# patient means
+m <- numeric(5)
+for(i in 1:n) {
+  m[i] <- mean(c(A[i], B[i], C[i]))
+}
+
+cat(sprintf("m_A: %.3f, m_B: %.3f, m_C: %.3f", m_A, m_B, m_C), "\n",
+    "m:", sprintf("%.3f", m), "\n\n")
+
+SS_cond   <- n * sum((m_A-m_grand)^2 + (m_B-m_grand)^2 + (m_C-m_grand)^2)
+SS_object <- k * sum((m-m_grand)^2)
+SS_within <- sum((A-m_A)^2 + (B-m_B)^2 + (C-m_C)^2)
+SS_error  <- SS_within - SS_object
+
+cat(sprintf("SS_cond: %.3f, SS_obbject: %.3f, SS_within: %.3f, SS_error: %.3f",
+            SS_cond, SS_object, SS_within, SS_error), "\n")
+
+MS_cond   <- SS_cond / (k-1)
+MS_object <- SS_object / (n-1)
+MS_within <- SS_within / (k*(n-1))
+MS_error  <- SS_error / ((n-1)*(k-1))
+
+cat(sprintf("MS_cond: %.3f, MS_obbject: %.3f, MS_within: %.3f, MS_error: %.3f",
+            MS_cond, MS_object, MS_within, MS_error), "\n\n")
+
+test_statistic <- MS_cond / MS_error
+critical_value <- qf(0.95, k-1, (n-1)*(k-1))
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f" ,
+            test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

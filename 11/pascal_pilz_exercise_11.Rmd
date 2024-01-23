@@ -1,0 +1,136 @@
+---
+title: "Homework 11"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 27
+
+```{r}
+X <- c(10, 8, 3, 4, 1, 5, 9, 2, 6, 6)
+Y <- c(7, 9, 5, 3, 2, 6, 10, 1, 4, 8)
+```
+
+## Spearman-rank correlation coefficient
+
+```{r}
+X_rank <- c(10, 8, 3, 4, 1, 5, 9, 2, 6.5, 6.5)
+Y_rank <- c(7, 9, 5, 3, 2, 6, 10, 1, 4, 8)
+
+X_rank_sd <- sd(X_rank)
+Y_rank_sd <- sd(Y_rank)
+
+XY_rank_cov <- cov(X_rank, Y_rank)
+
+rho_XY <- XY_rank_cov / (X_rank_sd * Y_rank_sd)
+
+cat(sprintf("SD X rank: %.3f; SD Y rank: %.3f; COV X,Y rank: %.3f; Rho X,Y: %.3f",
+            X_rank_sd, Y_rank_sd, XY_rank_cov, rho_XY))
+```
+
+## Test if the relationship is statistically significant
+
+We perform the "Exact Test for No Linear Correlation", which just tests the correlation coefficient against 0.
+
+```{r}
+n <- length(X)
+
+test_statistic <- rho_XY * sqrt( (n-2) / (1 - rho_XY^2) )
+critical_value <- qt(0.975, n-2)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+\clearpage
+
+# Exercise 28
+
+In this examples we have correlated overlapping correlations coefficients, as such we use "Tests of Correlation Coefficients II".
+
+```{r}
+r12 <- -0.205  # family social support - stress
+r13 <-  0.285  # loneliness - stress
+r23 <- -0.495  # family social support - loneliness
+n <- 405
+
+R_abs <- abs( 1 - r12^2 - r13^2 - r23^2 + 2 * r12 * r13 * r23 )
+r_bar <- (r12 + r13) / 2
+test_statistic <- (r12-r13) *
+  sqrt( ((n-1) * (1+r23)) /
+          ( 2 * ((n-1)/(n-3)) * R_abs + r_bar^2 * (1-r23)^3 ) )
+critical_value <- qt(0.975, n-3)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+\clearpage
+
+# Exercise 29
+
+```{r}
+A <- c(2, 3, 5, 2)
+B <- c(1, 4, 5, 3)
+```
+
+## Kendall's Tau-b
+
+```{r}
+A_sort <- c(2, 2, 3, 5)
+B_sort <- c(1, 3, 4, 5)
+n <- length(A)
+
+# 13 14 15, 34 35, 45
+# +  +  +   +  +   +
+# 31 34 35, 14 15, 45
+# -  +  +   +  +   +
+
+nc <- 5
+nd <- 0
+
+T <- 2 * (2-1) / 2
+W <- 0
+
+tau_b <- (nc - nd) /
+  ( sqrt(0.5 * n * (n-1) - T) * sqrt(0.5 * n * (n-1) - W) )
+
+cat(sprintf("Kendall Tau-b: %.3f", tau_b))
+```
+
+## Test if correlation is significant
+
+```{r}
+v0 <- n * (n-1) * (2*n+5)
+vt <- 2 * (2-1) * (2*2+5)
+vw <- 0
+v1 <- 0
+v2 <- 0
+v <- (v0 - vt - vw) / (18 + v1 + v2)
+
+test_statistic <- (nc - nd) / sqrt(v)
+critical_value <- qnorm(0.975)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+
+
+
+
+
+
+
+

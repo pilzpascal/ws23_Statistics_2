@@ -1,0 +1,119 @@
+---
+title: "Homework 9"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 22
+
+```{r}
+a <- 5
+b <- 3
+c <- 2
+d <- 10
+
+P1 <- a / (a+b)
+P0 <- c / (c+d)
+
+cat(sprintf("p(ill | fish) = %.3f, p(ill | !fish) = %.3f", P1, P0))
+```
+
+## Odds-ratio and confidence interval
+
+### Odds
+
+```{r}
+odds_fish <- P1 / (1 - P1)
+odds_nfish <- P0 / (1 - P0)
+
+cat(sprintf(" odds(fish)  = %.3f, odds(!fish) = %.3f", odds_fish, odds_nfish))
+```
+
+### Odds-ratio
+
+```{r}
+OR <- odds_fish / odds_nfish
+SE <- (1/a + 1/b + 1/c + 1/d) ^ (0.5)
+
+cat(sprintf("OR(fish) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            OR, OR*exp(-qnorm(0.975) * SE), OR*exp(+qnorm(0.975) * SE)))
+```
+
+## Statistical test for odds-ratio
+
+```{R}
+z <- log(OR)/SE
+
+cat(sprintf("z = %.3f, significant difference from 1: %s", z, z > qnorm(0.975)))
+```
+
+## Risk-ratio and confidence interval
+
+```{r}
+RR <- P1 / P0
+SE <- ( ( b / (a*(a+b)) ) + ( d / (c*(c+d)) ) ) ^ (0.5)
+
+cat(sprintf("RR(fish) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            RR, RR*exp(-qnorm(0.975) * SE), RR*exp(+qnorm(0.975) * SE)))
+```
+
+\newpage
+
+# Exercise 23
+
+```{r}
+a <- 965
+b <- 2691
+c <- 957
+d <- 2855
+
+P1 <- a / (a+b)
+P0 <- c / (c+d)
+
+cat(sprintf("p(s | m) = %.3f, p(s | f) = %.3f", P1, P0))
+```
+
+## Odds ration
+
+### Odds
+
+```{r}
+odds_m <- P1 / (1 - P1)
+odds_f <- P0 / (1 - P0)
+
+cat(sprintf(" odds(male)  = %.3f, odds(female) = %.3f", odds_m, odds_f))
+```
+
+### Odds-ratio
+
+```{r}
+OR <- odds_m / odds_f
+SE <- (1/a + 1/b + 1/c + 1/d) ^ (0.5)
+
+cat(sprintf("OR(male) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            OR, OR*exp(-qnorm(0.975) * SE), OR*exp(+qnorm(0.975) * SE)))
+```
+
+## Risk ratio
+
+```{r}
+RR <- P1 / P0
+SE <- ( ( b / (a*(a+b)) ) + ( d / (c*(c+d)) ) ) ^ (0.5)
+
+cat(sprintf("RR(male) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            RR, RR*exp(-qnorm(0.975) * SE), RR*exp(+qnorm(0.975) * SE)))
+```
+
+
+
+
+
+
+
+
+
