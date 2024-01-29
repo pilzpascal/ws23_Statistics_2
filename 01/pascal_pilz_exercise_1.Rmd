@@ -1,0 +1,46 @@
+---
+title: "Homework 1"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 1
+
+```{r}
+x <- c(0,3,3,3,6,0,1,0,0,1,1,3,0,4,3,1,4,6,4,2,0,1,1,0,1,1,0,1,0,3)
+
+cat(sprintf("mean: %.3f, sd: %.3f,", mean(x), sd(x)),
+    "quantiles:", sprintf("%.3f", quantile(x)))
+```
+
+\newpage
+
+# Exercise 2
+```{r}
+x1 <- c(157,184,162,166,168,163,178,185,190,187,176,174,179)
+
+cat(sprintf("mean: %.3f, sd: %.3f,", mean(x1), sd(x1)),
+    "quantiles:", sprintf("%.3f", quantile(x1)))
+
+x2 <- c(47,85,66,83,62,73,84,94,99,96,76,94,74)
+
+cat(sprintf("mean: %.3f, sd: %.3f,", mean(x2), sd(x2)),
+    "quantiles:", sprintf("%.3f", quantile(x2)))
+```
+
+\newpage
+
+# Exercise 3
+
+For this we realize that the final income in 200% of the initial income, thus we simply take the 10th root of 2.
+
+```{r}
+x <- 2 ^ (1/10)
+
+cat(sprintf("The average annual growth rate is %s%%", round((x-1)*100, 3)))
+```

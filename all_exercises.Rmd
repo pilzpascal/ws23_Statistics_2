@@ -1,0 +1,1243 @@
+---
+title: "Statistics 2 Exercises"
+author: "Pascal Pilz, k12111234"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 1
+
+```{r}
+x <- c(0,3,3,3,6,0,1,0,0,1,1,3,0,4,3,1,4,6,4,2,0,1,1,0,1,1,0,1,0,3)
+
+cat(sprintf("mean: %.3f, sd: %.3f,", mean(x), sd(x)),
+    "quantiles:", sprintf("%.3f", quantile(x)))
+```
+
+# Exercise 2
+```{r}
+x1 <- c(157,184,162,166,168,163,178,185,190,187,176,174,179)
+
+cat(sprintf("mean: %.3f, sd: %.3f,", mean(x1), sd(x1)),
+    "quantiles:", sprintf("%.3f", quantile(x1)))
+
+x2 <- c(47,85,66,83,62,73,84,94,99,96,76,94,74)
+
+cat(sprintf("mean: %.3f, sd: %.3f,", mean(x2), sd(x2)),
+    "quantiles:", sprintf("%.3f", quantile(x2)))
+```
+
+# Exercise 3
+
+For this we realize that the final income in 200% of the initial income, thus we simply take the 10th root of 2.
+
+```{r}
+x <- 2 ^ (1/10)
+
+cat(sprintf("The average annual growth rate is %s%%", round((x-1)*100, 3)))
+```
+
+# Exercise 4
+
+We create boxplots of the data from example 2:
+
+```{r, fig.show="hold", out.width="33%"}
+x1 <- c(157,184,162,166,168,163,178,185,190,187,176,174,179)
+x2 <- c(47,85,66,83,62,73,84,94,99,96,76,94,74)
+data <- data.frame("height"=x1, "weight"=x2)
+boxplot(data)
+
+hist(data$height)
+hist(data$weight)
+```
+
+# Exercise 5
+
+We have haemoglobin data of 16 patients:
+
+```{r}
+x <-c (7.2,7.7,8.0,8.1,8.3,8.4,8.4,8.5,8.6,8.7,9.1,9.1,9.1,9.8,10.1,10.3)
+```
+
+## a)
+
+As a point estimator for the true mean and true standard deviation we can calculate the sample mean and sample standard deviation:
+
+```{r}
+n <- length(x)
+
+sample_mean <- (1/n) * sum(x)
+sample_var <- (1/(n-1)) * sum((x-sample_mean)^2)
+sample_std <- sqrt(sample_var)
+
+print(sprintf("smaple mean: %.3f, sample standard deviation: %.3f",
+              sample_mean, sample_std))
+```
+
+## b)
+
+Calculating a 95% confidence interval for the true mean value of haemoglobin based on the sample above.
+
+For this we have the following formula:
+$$
+\mu \in \left[ \bar{x} \pm t_{n-1, 1-\alpha/2} \cdot \frac{s}{\sqrt{n}} \right]
+$$
+where $\alpha$ is the chosen risk level, $t_{n-1, 1-\alpha/2}$ is corresponding quantile of the $t$-distribution, and $s$ is the sample variance ($s / \sqrt{n}$ is the standard error).
+
+We have 16 samples and a confidence level of 95% ($\alpha=0.05$), we find in the table $t_{15, 0.975} = 2.13$. To make it more precise and as an exercise in R we also get the value from the `qt` function.
+
+```{r}
+alpha <- 0.05
+t <- qt(1-(alpha/2), n-1)
+
+val <- t * sample_std / sqrt(n)
+
+conf_lower <- sample_mean - val
+conf_upper <- sample_mean + val
+
+print(sprintf("P(true mean in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+## c)
+
+What would happen with the confidence interval, if the sample size was not 16 patients but 160 patients?
+
+The confidence interval would get smaller, since both the value of the $t$-distribution would get smaller ($t_{159, 0.975} = 1.974$) and $n$, which is in the numerator of the formula, would increase. If the sample mean and sample variance would remain the same we would get the following:
+
+```{r}
+n_new <- 159
+alpha <- 0.05
+t <- qt(1-(alpha/2), n_new-1)
+
+val <- t * sample_std / sqrt(n_new)
+
+conf_lower <- sample_mean - val
+conf_upper <- sample_mean + val
+
+print(sprintf("P(true mean in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+# Exercise 6
+
+We have a sample of 11 persons, 2 of which smoke. We want to calculate two different 90% confidence intervals.
+
+```{r}
+alpha <- 0.1
+q <- 1 - (alpha/2)
+n <- 11
+k <- 2
+p <- k/n
+print(sprintf("p: %.3f, n*p*(1-p): %.3f", p, n*p*(1-p)))
+```
+
+## a) 90% asymtotic confidence interval for the true proportion of smokers
+
+First we get the point estimator $\hat{\pi}$ given by $\hat{\pi} = p = \frac{k}{n}$, then we use the formula found in the slides to calculate the confidence interval for $\alpha = 0.1$:
+```{r}
+val <- qnorm(q) * sqrt(p*(1-p)/n)
+conf_lower <- p - val
+conf_upper <- p + val
+print(sprintf("P(true proportion in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+As we can see, the result is not very convincing.
+
+## b) 90% exact confidence interval for the true proportion of smokers
+
+For this we use formula found on slide 14, which involves the $F$-distribution:
+```{r}
+conf_lower <- k / (k + (n-k+1) * qf(q, 2*(n-k+1), 2*k))
+conf_upper <- (k+1) * qf(q, 2*(k+1), 2*(n-k)) /
+              ((n-k) + (k+1) * qf(q, 2*(k+1), 2*(n-k)))
+print(sprintf("P(true proportion in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+# Exercise 7
+
+We have the following number of bacteria per sample taken for 10 different sample:
+
+```{r}
+x <- c(13,14,12,11,16,16,17,20,20,21)
+n <- length(x)
+
+sample_mean <- mean(x)
+sample_std <- sd(x)
+
+print(sprintf("mean %.3f, std %.3f", sample_mean, sample_std))
+```
+
+## a) 95% confidence interval for the true mean
+
+```{r}
+alpha <- 0.05
+t <- qt(1-(alpha/2), n-1)
+
+val <- t * sample_std / sqrt(n)
+
+conf_lower <- sample_mean - val
+conf_upper <- sample_mean + val
+
+print(sprintf("P(true mean in [%.3f,%.3f]) = %s",
+              conf_lower, conf_upper, 1-alpha))
+```
+
+## b) test if "true mean" differs from $\mu_0 = 14$
+
+We want to construct a test that checks whether the "true mean" $\mu$ of bacteria count differs from $\mu_0 = 14$. We want to use a type I error of 5%, we can assume normality.
+
+For this, let us define the following:
+
+- Null hypothesis $H_0$: $\mu = \mu_0$
+- Alternative hypothesis $H_1$: $\mu \neq \mu_0$
+
+What we want to verify is that the true mean differs from 14, thus we want to verify the alternative hypothesis. For this, we show that the null hypothesis can be rejected. 
+
+In our example, a one-sample t-test is appropriate:
+
+```{r}
+crit_val <- qt(1-(alpha/2), n-1)
+test_stat <- abs(sqrt(n)*(sample_mean-14)/sample_std)
+
+print(sprintf("critical value: %.3f, test statistic: %.3f",
+              crit_val, test_stat))
+```
+
+Since the critical value is greater than the test statistic, we cannot reject the null hypothesis.
+
+# Exercise 8
+
+```{r}
+A <- c(7.2,7.7,8.0,8.1,8.3,8.4,8.4,8.5,8.6,8.7,9.1,9.1,9.1,9.8,10.1,10.3)
+B <- c(8.1,9.2,10.0,10.4,10.6,10.9,11.1,11.9,12.0,12.1)
+
+n <- length(A)
+m <- length(B)
+
+alpha <- 0.05
+
+mean_A <- sum(A)/n
+mean_B <- sum(B)/m
+
+s_A <- sqrt( sum(A^2)/n - mean_A^2 )
+s_B <- sqrt( sum(B^2)/m - mean_B^2 )
+
+cat(sprintf("sample variance A: %.3f, sample variance B: %.3f", s_A, s_B))
+```
+
+## F-test
+
+We want to perform an $F$-test to see if the "true" variances differ.
+
+For this, we formula the hypothesis:
+
+-   $H_0$: $\sigma_A^2 = \sigma_B^2$
+-   $H_1$: $\sigma_A^2 \neq \sigma_B^2$
+
+With the test statistic $F(x,y) = s_x^2 / s_y^2$ for $s_x^2 > s_y^2$ and the critical value $F_{n_x-1, n_y-1, 1-\alpha}$.
+
+We have that that $s_A < s_B$, thus we have the test statistic $F = s_B^2 / s_A^2$.
+
+```{r}
+test_statistic <- s_B^2 / s_A^2
+critical_value <- qf(1-alpha, m-1, n-1)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            df(test_statistic, m-1, n-1)))
+```
+
+## Levene-test
+
+I choose to use the mean to calculate the spread, just to make things easier.
+
+```{r}
+z_A <- abs(A - mean_A)
+mean_z_A <- sum(z_A)/n
+
+z_B <- abs(B - mean_B)
+mean_z_B <- sum(z_B)/m
+
+z <- sum(c(z_A, z_B)) / (n+m)
+
+test_statistic <- ( (n+m-2) * (n*(mean_z_A - z)^2 + m*(mean_z_B - z)^2) ) /
+  ( sum((z_A - mean_z_A)^2) + sum((z_B - mean_z_B)^2) )
+critical_value <- qf(1-alpha, 1, n+m-2)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot" ))
+
+suppressMessages(library(car))
+suppressWarnings(
+cat(sprintf("p-value of: manual implementation %.3f, package 'car' %.3f",
+            1 - pf(test_statistic, 1, n+m-2),
+            leveneTest(c(A,B), c(rep(0, n), rep(1, m)), center="mean")$`Pr(>F)`[1]))
+)
+```
+
+## Test to verify if there is a difference between the "true means"
+
+Since both $F$-test and Levene-test cannot reject the null hypothesis, we can assume homoscedasticity.
+
+We will perform an independent two-sample t-test:
+```{r}
+s_p <- sqrt( ((n-1)*(s_A^2) + (m-1)*(s_B^2)) / (n+m-2) )
+
+test_statistic <- abs(mean_A - mean_B) * sqrt(n*m/n+m) / s_p
+
+critical_value <- qt(1-(alpha/2), n+m-2)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            dt(test_statistic, n+m-2)))
+```
+
+## Confidence interval for difference of "true means"
+
+```{r}
+val <- qt(1-(alpha/2), n+m-2) * s_p * sqrt(1/n + 1/m)
+
+cat(sprintf("The true difference of the means is with %.f%% in [%.3f, %.3f]",
+            (1-alpha)*100, mean_A-mean_B - val, mean_A-mean_B + val))
+```
+
+# Exercise 9
+
+```{r}
+mean_A <- 22.13
+mean_B <- 18.68
+
+s_A <- 3.74
+s_B <- 1.21
+
+n <- 8
+m <- 6
+```
+
+## Homoscedasticity
+
+First we conduct an F-test to see whether we can assume homoscedasticity.
+
+```{r}
+test_statistic <- s_A^2 / s_B^2
+critical_value <- qf(0.95, n-1, m-1)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            df(test_statistic, m-1, n-1)))
+```
+
+## Test for difference of means
+
+As we can see, we cannot assume homoscedasticity. Therefore, we use Welch's two-sample t-test:
+
+```{r}
+Z_A <- ( ((s_A^2)/n) / ((s_A^2)/n + (s_B^2)/m) )^2 / (n-1)
+Z_B <- ( ((s_B^2)/n) / ((s_A^2)/n + (s_B^2)/m) )^2 / (m-1)
+df <- 1 / (Z_A + Z_B)
+
+cat(sprintf("Z_A %.5f, Z_B %.5f, df %.2f", Z_A, Z_B, df))
+
+test_statistic <- (mean_A - mean_B) / sqrt(s_A^2/n + s_B^2/m)
+critical_value <- qt(1-(0.05/2), df)
+
+cat(sprintf("test statistic: %.3f, critical value: %.3f",
+            test_statistic, critical_value))
+
+cat(sprintf("The null hypothesis %s be rejected. p-value %s",
+            if (test_statistic > critical_value) "can" else "cannot",
+            dt(test_statistic, df)))
+```
+
+# Exercise 10
+
+```{r}
+# Relevant difference
+d <- 13
+
+# Sample standard deviations
+s_A <- 15
+s_B <- 18
+
+# Type 1 and type 2 error
+a <- 0.025
+b <- 0.1
+```
+
+Since the size of the two groups will be the same we can get the pooled variance by taking the mean of the two sample variances.
+
+```{r}
+# Pooled standard deviation
+s_p <- sqrt((s_A^2 + s_B^2) / 2)
+cat(sprintf("s_p: %s", s_p), "\n")
+
+# Quantiles of normal distribution
+u_a <- qnorm(1-a)
+u_b <- qnorm(1-b)
+cat(sprintf("u_a: %s, u_b: %s", u_a, u_b), "\n")
+
+# Sample size estimation for one-sided t-test, rounded up for conservative approach
+n <- ceiling(2 * (u_a + u_b)^2 * s_p^2 / d^2)
+cat(sprintf("We need %s patients total, %s per group.", 2*n, n))
+```
+
+# Exercise 11
+
+We do a Kolmogorov-Smirnov test to check for normality.
+
+```{r}
+mydata <- c(3,4,5,6,7)
+
+Sn <- c(0.2, 0.4, 0.6, 0.8, 1)
+Sn_shift <- c(0, 0.2, 0.4, 0.6, 0.8)
+
+F0 <- pnorm(mydata, mean=3, sd=2)
+
+test_statistic <- max( c(max(abs(Sn - F0)), max(abs(Sn_shift - F0))) )
+cat(sprintf("Test statistic sup|Sn(x) - F0(x)| = %s", test_statistic), "\n")
+
+# We get the critical value from the table, for n=5 and alpha=0.1
+critical_value <- 0.509
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot"))
+```
+
+# Exercise 12
+
+Here we do a Lilliefors test to check for normality.
+
+```{r}
+mydata <- c(3,4,5,6,7)
+
+Sn <- c(0.2, 0.4, 0.6, 0.8, 1)
+Sn_shift <- c(0, 0.2, 0.4, 0.6, 0.8)
+
+F0 <- pnorm(mydata, mean=mean(mydata), sd=sd(mydata))
+
+test_statistic <- max( c(max(abs(Sn - F0)), max(abs(Sn_shift - F0))) )
+cat(sprintf("Test statistic sup|Sn(x) - F0(x)| = %s", test_statistic), "\n")
+
+# We get the critical value from the table, for n=5 and alpha=0.1
+critical_value <- 0.315
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot"))
+```
+
+# Exercise 13
+
+```{r}
+x <- c(13,14,12,11,16,16,17,20,20,21)
+n <- length(x)
+
+m <- mean(x)
+s <- sd(x)
+
+print(sprintf("mean %.3f, std %.3f", m, s))
+
+ref_val <- 14
+a <- 0.05
+b <- 0.2
+```
+
+Since we want to know whether there is a difference, we use a two-sided one-sample t-test.
+
+```{r}
+ua <- qnorm(1-a/2)
+ub <- qnorm(1-b)
+cat(sprintf("u(1-a/2) %.3f, u(1-b) %.3f", ua, ub), "\n")
+
+d <- m - ref_val
+
+n <- (ua+ub)^2 * s^2 / d^2
+cat(sprintf("We need %s samples.", ceiling(n)))
+```
+
+# Exercise 14
+
+```{r}
+A <- sort(c(11,37,32,27,29,29,27,31,14))
+B <- sort(c(52,38,51,48,49,52,28,17,16))
+
+boxplot(A, B, names=c("A", "B"))
+```
+
+## Check for normality
+
+First we check if our data is normally distributed. For this, we use a Lilliefors test.
+
+```{r}
+ma <- mean(A)
+sa <- sd(A)
+S <- 1:length(A) / length(A)
+S_shift <- c(0, 1:(length(A)-1)/length(A))
+F0 <- pnorm(A, ma, sa)
+
+test_statistic <- max(max(abs(S-F0)), max(abs(S_shift-F0)))
+critical_value <- 0.249
+cat(sprintf("Test statistic %s", test_statistic), "\n")
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) "can" else "cannot"))
+```
+
+Since `A` is not normally distributed we forgo checking `B` and immediately go over to using a non parametric test. I am not sure if this is correct, since we do have ties in both groups and therefore the KS test should maybe not be used. We can also a QQ-plot:
+
+```{r}
+qqnorm(A)
+qqline(A)
+```
+
+## Test
+
+We use a Mann-Whitney-U Test. We need to use the exact MWU test because we have ties
+
+```{r}
+#install.packages("coin")
+library(coin)
+
+data<-c(A,B)
+group<-as.factor(c(rep("A",length(A)),rep("B",length(B))))
+wilcox_test(data~group,distribution = "exact")
+```
+
+This indicates that we cannot reject the null hypothesis.
+
+# Exercise 15
+
+```{r, fig.show="hold", out.width="50%"}
+A <- c(54.5,60.4,85.6,78.2,120.6,121)
+B <- c(55.5,69.6,86.7,81.6,116.5,115)
+```
+
+We know that normality of the data cannot be assumed. Therefore, we use a Wilcoxon Test for paired data.
+
+## Manual Wilcoxon Test
+
+```{r}
+d <- A - B
+
+df <- data.frame(difference=d, rank=rank(abs(d)))
+print(df)
+
+df <- df[df$difference!=0,]
+pos_rank_sum <- sum(df$rank[df$difference>0])
+neg_rank_sum <- sum(df$rank[df$difference<0])
+cat(sprintf("positive rank sum %s", pos_rank_sum), "\n")
+cat(sprintf("negative rank sum %s", neg_rank_sum), "\n")
+
+test_statistic <- min(pos_rank_sum, neg_rank_sum)
+cat(sprintf("test statistic %s", test_statistic), "\n")
+critical_value <- 0
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic <= critical_value) "can" else "cannot"))
+```
+
+## Implemented Test
+
+```{r}
+wilcox.test(A,B,paired=TRUE,correct=FALSE)
+wilcoxsign_test(A~B,distribution = "exact",zero.method="Wilcoxon")
+wilcoxsign_test(A~B,distribution = "asymptotic",zero.method="Wilcoxon")
+wilcoxsign_test(A~B,distribution = approximate(nresample = 10000),zero.method="Wilcoxon")
+```
+
+# Exercise 16
+
+## Assumption
+
+```{r}
+n <- 21
+k <- 18
+p <- k/n
+
+cat(sprintf("n*p*(1-p) = %.2f", n*p*(1-p)))
+```
+
+Since $n \cdot p \cdot (1-p) < 9$ we cannot use the asymptotic test. Therefore, we use the exact binomial test.
+
+## Exact Binomial Test
+
+```{r}
+e <- 0.6 # Expected cure rate
+
+p1 <- 0
+for (i in 0:k) {
+  p1 <- p1 + choose(n, i) * e^i * (1-e)^(n-i)
+}
+cat(sprintf("p1: %.3f", p1), "\n")
+
+p2 <- 0
+for (i in k:n) {
+  p2 <- p2 + choose(n, i) * e^i * (1-e)^(n-i)
+}
+cat(sprintf("p2: %.3f", p2), "\n")
+
+p_val <- 2*min(p1, p2)
+a <- 0.05 # Type 1 error
+cat(sprintf("The null hypothesis %s be rejected. p.value %.3f",
+            if (p_val < a) {"can"} else {"can not"}, p_val))
+```
+
+# Exercise 17
+
+Since our data is ordinal we can perform a Mann-Whitney-U test to check if the two groups differ significantly.
+
+```{r}
+A <- c(5,7,6,4,6,0)
+B <- c(3,10,4,5,6,0)
+
+library(coin)
+data<-c(A,B)
+group<-as.factor(c(rep("A",length(A)),rep("B",length(B))))
+wilcox_test(data~group,distribution = "exact")
+```
+
+And so we can see that the null hypothesis cannot be reject, the data are likely from the same distribution.
+
+# Exercise 18
+
+Since we have $n = 300 > 40$ and $e_{ij} \geq 5$ we use a Chi-square test.
+
+## Expected data
+
+```{r}
+A <- c(70,7,13,10)
+B <- c(150,20,20,10)
+
+A_p <- A / sum(A) * 100
+A_e <- c(A+B) * sum(A)/(sum(A)+sum(B))
+A_e_p <- A_e / sum(A_e) * 100
+
+B_p <- B / sum(B) * 100
+B_e <- c(A+B) * sum(B)/(sum(A)+sum(B))
+B_e_p <- B_e / sum(B_e) * 100
+
+cat(" Expected A:         ", sprintf("%6.2f", A_e), "\n",
+    "Observed A:         ", sprintf("%6.2f", A), "\n",
+    "Expected A percent: ", sprintf("%5.1f%%", B_e_p), "\n",
+    "Observed A percent: ", sprintf("%5.f%%", A_p), "\n",
+    "\n",
+    "Expected B:         ", sprintf("%6.2f", B_e), "\n",
+    "Observed B:         ", sprintf("%6.2f", B), "\n",
+    "Expected B percent: ", sprintf("%5.1f%%", B_e_p), "\n",
+    "Observed B percent: ", sprintf("%5.f%%", B_p), "\n")
+```
+
+## Measure of divergence and test
+
+```{r}
+# Type 1 error
+a <- 0.05
+
+test_statistic <- sum( ( c(A, B) - c(A_e, B_e) )^2 / c(A_e, B_e) )
+critical_value <- qchisq(1-a, 1)
+
+cat(sprintf("The null hypothesis %s be rejected.",
+            if (test_statistic > critical_value) {"can"} else {"can not"}))
+```
+
+# Exercise 19
+
+Since we have 25 samples and we have one of fields is less than 5, we use Fisher's exact test.
+
+```{r}
+data <- matrix(c(4, 5, 13, 3), 2, 2)
+fisher.test(data)
+```
+
+We can see that there is no significant difference.
+
+# Exercise 20
+
+```{r}
+data <- matrix(c(5, 1, 2, 6), 2, 2)
+```
+
+We want to compare the asymptotic Chi-square test, Chi-square with Yate's correction, and exact Fisher test.
+
+Since we have a sample size of XX and cells with values of less than 5 we already know that the assumption of the Chi-square test are violated.
+
+## Chi-square
+
+```{r}
+chisq.test(data, correct=FALSE)
+```
+
+## Chi-square with Yate's correction
+
+```{r}
+chisq.test(data, correct=TRUE)
+```
+
+## Fiher's exact test
+
+```{r}
+fisher.test(data)
+```
+
+## Conclusion
+
+As we can, the p-value for the corrected Chi-square test and Fisher's exact test are quite close, whereas the uncorrected Chi-square test produces a drastically different result.
+
+# Exercise 21
+
+```{r}
+p <- 100
+n <- 200
+
+pre <- p / (p + n)
+
+tp <- 90
+fp <- 30
+tn <- 170
+fn <- 10
+
+se <- tp / p
+sp <- tn / n
+
+ppv_1 <- tp / (tp + fp)
+ppv_2 <- (se * pre) / (se * pre + (1 - sp) * (1 - pre))
+
+npv_1 <- tn / (tn + fn)
+npv_2 <- (sp * (1 - pre)) / (sp * (1 - pre) + (1 - se) * pre)
+
+cat(sprintf(" sensitivity: %.3f\n", se),
+    sprintf("specificity: %.3f\n", sp),
+    "\n",
+    sprintf("positive predictive value (excluding prevelance): %.3f\n", ppv_1),
+    sprintf("positive predictive value (including prevelance): %.3f\n", ppv_2),
+    "\n",
+    sprintf("negative predictive value (excluding prevelance): %.3f\n", npv_1),
+    sprintf("negative predictive value (including prevelance): %.3f\n", npv_2))
+```
+
+# Exercise 22
+
+```{r}
+a <- 5
+b <- 3
+c <- 2
+d <- 10
+
+P1 <- a / (a+b)
+P0 <- c / (c+d)
+
+cat(sprintf("p(ill | fish) = %.3f, p(ill | !fish) = %.3f", P1, P0))
+```
+
+## Odds-ratio and confidence interval
+
+### Odds
+
+```{r}
+odds_fish <- P1 / (1 - P1)
+odds_nfish <- P0 / (1 - P0)
+
+cat(sprintf(" odds(fish)  = %.3f, odds(!fish) = %.3f", odds_fish, odds_nfish))
+```
+
+### Odds-ratio
+
+```{r}
+OR <- odds_fish / odds_nfish
+SE <- (1/a + 1/b + 1/c + 1/d) ^ (0.5)
+
+cat(sprintf("OR(fish) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            OR, OR*exp(-qnorm(0.975) * SE), OR*exp(+qnorm(0.975) * SE)))
+```
+
+## Statistical test for odds-ratio
+
+```{R}
+z <- log(OR)/SE
+
+cat(sprintf("z = %.3f, significant difference from 1: %s", z, z > qnorm(0.975)))
+```
+
+## Risk-ratio and confidence interval
+
+```{r}
+RR <- P1 / P0
+SE <- ( ( b / (a*(a+b)) ) + ( d / (c*(c+d)) ) ) ^ (0.5)
+
+cat(sprintf("RR(fish) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            RR, RR*exp(-qnorm(0.975) * SE), RR*exp(+qnorm(0.975) * SE)))
+```
+
+# Exercise 23
+
+```{r}
+a <- 965
+b <- 2691
+c <- 957
+d <- 2855
+
+P1 <- a / (a+b)
+P0 <- c / (c+d)
+
+cat(sprintf("p(s | m) = %.3f, p(s | f) = %.3f", P1, P0))
+```
+
+## Odds ration
+
+### Odds
+
+```{r}
+odds_m <- P1 / (1 - P1)
+odds_f <- P0 / (1 - P0)
+
+cat(sprintf(" odds(male)  = %.3f, odds(female) = %.3f", odds_m, odds_f))
+```
+
+### Odds-ratio
+
+```{r}
+OR <- odds_m / odds_f
+SE <- (1/a + 1/b + 1/c + 1/d) ^ (0.5)
+
+cat(sprintf("OR(male) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            OR, OR*exp(-qnorm(0.975) * SE), OR*exp(+qnorm(0.975) * SE)))
+```
+
+## Risk ratio
+
+```{r}
+RR <- P1 / P0
+SE <- ( ( b / (a*(a+b)) ) + ( d / (c*(c+d)) ) ) ^ (0.5)
+
+cat(sprintf("RR(male) = %.3f, 95%% confidence interval: [%.3f, %.3f]",
+            RR, RR*exp(-qnorm(0.975) * SE), RR*exp(+qnorm(0.975) * SE)))
+```
+
+# Exercise 24
+
+```{r}
+a <- 15
+b <- 10
+c <- 5
+d <- 10
+
+n <- a + b + c + d
+```
+
+## a) Measure of agreement
+
+We calculate Cohen's Kappa.
+
+```{r}
+p_e   <- (a+b)/n * (a+c)/n + (c+d)/n * (b+d)/n
+p_a   <- (a+d)/n
+kappa <- (p_a-p_e) / (1-p_e)
+cat(sprintf("p_e: %.3f, p_a: %.3f, kappa: %.3f", p_e, p_a, kappa))
+```
+
+This means we have "fair agreement".
+
+## b) Statistically relevant difference
+
+We use the exact McNemar test.
+
+```{r}
+r <- min(b,c)
+p <- 2 * sum(choose(b+c, 0:r) * 0.5^(b+c))
+
+cat(sprintf("p-value: %.3f", p))
+```
+
+We can see that there is no significant difference.
+
+# Exercise 25
+
+```{r}
+X <- c(10,8,3,4,1,5,9,2,6,6)
+Y <- c(7,9,5,3,2,6,10,1,4,8)
+
+n <- length(X)
+```
+
+## a) Bravais-Pearson correlation coefficient
+
+```{r}
+r <- cov(X,Y) / (sd(X) * sd(Y))
+cat(sprintf("r: %.3f", r))
+```
+
+## Test to verify statistical significance
+
+## b) Test for statistical signifance
+
+Since we only want to know whether there is a significant correlation, we can use the "Exact Test for No Linear Correlation" test.
+
+```{r}
+test_stat <- r * sqrt((n-2)/(1-r^2))
+cat(sprintf("test statistic: %.3f, significant value: %.3f, ",
+            test_stat, qt(0.975, n-2)))
+```
+
+We can see that there is a significant difference from 0.
+
+# Exercise 26
+
+We use the "Tests of Correlation Coefficients I" test. For this, we first perform a Fisher z-transformation.
+
+```{r}
+n  <- 100
+r1 <- 0.62
+r2 <- 0.36
+
+z1 <- 0.5 * log((1+r1) / (1-r1))
+z2 <- 0.5 * log((1+r2) / (1-r2))
+
+test_stat <- (z1 - z2) / sqrt(2/(n-3))
+
+cat(sprintf("z1: %.3f, z2: %.3f, test statistic: %.3f, critical value: %.3f",
+            z1, z2, test_stat, qnorm(0.975)))
+```
+
+This means that we can reject the null hypothesis.
+
+# Exercise 27
+
+```{r}
+X <- c(10, 8, 3, 4, 1, 5, 9, 2, 6, 6)
+Y <- c(7, 9, 5, 3, 2, 6, 10, 1, 4, 8)
+```
+
+## Spearman-rank correlation coefficient
+
+```{r}
+X_rank <- c(10, 8, 3, 4, 1, 5, 9, 2, 6.5, 6.5)
+Y_rank <- c(7, 9, 5, 3, 2, 6, 10, 1, 4, 8)
+
+X_rank_sd <- sd(X_rank)
+Y_rank_sd <- sd(Y_rank)
+
+XY_rank_cov <- cov(X_rank, Y_rank)
+
+rho_XY <- XY_rank_cov / (X_rank_sd * Y_rank_sd)
+
+cat(sprintf("SD X rank: %.3f; SD Y rank: %.3f; COV X,Y rank: %.3f; Rho X,Y: %.3f",
+            X_rank_sd, Y_rank_sd, XY_rank_cov, rho_XY))
+```
+
+## Test if the relationship is statistically significant
+
+We perform the "Exact Test for No Linear Correlation", which just tests the correlation coefficient against 0.
+
+```{r}
+n <- length(X)
+
+test_statistic <- rho_XY * sqrt( (n-2) / (1 - rho_XY^2) )
+critical_value <- qt(0.975, n-2)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+# Exercise 28
+
+In this examples we have correlated overlapping correlations coefficients, as such we use "Tests of Correlation Coefficients II".
+
+```{r}
+r12 <- -0.205  # family social support - stress
+r13 <-  0.285  # loneliness - stress
+r23 <- -0.495  # family social support - loneliness
+n <- 405
+
+R_abs <- abs( 1 - r12^2 - r13^2 - r23^2 + 2 * r12 * r13 * r23 )
+r_bar <- (r12 + r13) / 2
+test_statistic <- (r12-r13) *
+  sqrt( ((n-1) * (1+r23)) /
+          ( 2 * ((n-1)/(n-3)) * R_abs + r_bar^2 * (1-r23)^3 ) )
+critical_value <- qt(0.975, n-3)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+# Exercise 29
+
+```{r}
+A <- c(2, 3, 5, 2)
+B <- c(1, 4, 5, 3)
+```
+
+## Kendall's Tau-b
+
+```{r}
+A_sort <- c(2, 2, 3, 5)
+B_sort <- c(1, 3, 4, 5)
+n <- length(A)
+
+# 13 14 15, 34 35, 45
+# +  +  +   +  +   +
+# 31 34 35, 14 15, 45
+# -  +  +   +  +   +
+
+nc <- 5
+nd <- 0
+
+T <- 2 * (2-1) / 2
+W <- 0
+
+tau_b <- (nc - nd) /
+  ( sqrt(0.5 * n * (n-1) - T) * sqrt(0.5 * n * (n-1) - W) )
+
+cat(sprintf("Kendall Tau-b: %.3f", tau_b))
+```
+
+## Test if correlation is significant
+
+```{r}
+v0 <- n * (n-1) * (2*n+5)
+vt <- 2 * (2-1) * (2*2+5)
+vw <- 0
+v1 <- 0
+v2 <- 0
+v <- (v0 - vt - vw) / (18 + v1 + v2)
+
+test_statistic <- (nc - nd) / sqrt(v)
+critical_value <- qnorm(0.975)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+# Exercise 30
+
+## Partial correlation
+
+```{r}
+n_crimes   <- c(210, 234, 279, 179, 160, 136)
+n_police   <- c(20, 21, 23, 19, 18, 15)
+population <- c(30000, 40000, 50000, 20000, 10000, 5000)
+
+r_xy <- cor(n_crimes, n_police)
+r_xu <- cor(n_crimes, population)
+r_yu <- cor(n_police, population)
+
+r_xy.u <- (r_xy - r_xu * r_yu) / sqrt((1 - r_xu^2) * (1 - r_yu^2))
+cat(sprintf("r_xy: %.3f, r_xu: %.3f, r_yu: %.3f, r_xy.u: %.3f",
+            r_xy, r_xu, r_yu, r_xy.u))
+```
+
+## Statistical test
+
+```{r}
+n <- length(n_crimes)
+test_statistic <- r_xy.u * sqrt((n - 3) / (1 - r_xy.u^2))
+critical_value <- qt(0.975, n-3)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+# Exercise 31
+
+```{r}
+A <- c(3.64, 3.77, 4.18, 4.21, 3.88, 3.93, 3.91, 3.96)
+B <- c(3.42, 3.96, 3.87, 4.19, 3.58, 3.76, 3.84, 3.98)
+C <- c(3.17, 3.63, 3.38, 3.47, 3.39, 3.41, 3.55, 3.44)
+
+boxplot(A, B, C)
+abline(h=mean(c(A, B, C)))
+```
+
+## Formulation of a statistical hypothesis
+
+Since we are comparing three different groups, we choose the following:
+
+- $H_0$: $\mu_A = \mu_B = \mu_C$
+- $H_1$: $\mu_A \neq \mu_B$ or $\mu_A \neq \mu_C$ or $\mu_B \neq \mu_C$
+
+## Statistical test
+
+The obvious choice would be an analysis of variance (ANOVA). But first, we check the assumptions.
+
+### Normality
+
+```{r}
+library(nortest)
+lillie.test(A)
+lillie.test(B)
+lillie.test(C)
+```
+
+As we can see, the data is normally distributed.
+
+### Homoscedasticity
+
+For this we perform a Levene test.
+
+```{r}
+library(car)
+
+dv <- c(A, B, C)
+iv <- as.factor(c(rep("A", length(A)), rep("B", length(B)), rep("C", length(C))))
+
+leveneTest(dv~iv, center="mean")
+```
+
+As we can see, the data can be assumed to be homoscedatic. Thus, we can proceed with ANOVA.
+
+## ANOVA
+
+```{r}
+m_grand <- mean(c(A, B, C))
+
+m_A <- mean(A)
+l_A <- length(A)
+
+m_B <- mean(B)
+l_B <- length(B)
+
+m_C <- mean(C)
+l_C <- length(C)
+
+SS_between <- l_A*(m_A-m_grand)^2 + l_B*(m_B-m_grand)^2 + l_C*(m_C-m_grand)^2
+SS_within  <- sum((A - m_A)^2 + (B - m_B)^2 + (C - m_C)^2)
+SS_total   <- SS_between + SS_within
+
+cat(sprintf("SS_between: %.3f, SS_within: %.3f, SS_total: %.3f",
+            SS_between, SS_within, SS_total), "\n")
+
+k <- 3
+N <- length(c(A, B, C))
+
+MS_between <- SS_between / (k-1)
+MS_within  <- SS_within / (N-k)
+MS_total   <- SS_total / (N-1)
+
+cat(sprintf("MS_between: %.3f, MS_within: %.3f, MS_total: %.3f",
+            MS_between, MS_within, MS_total), "\n")
+
+test_statistic <- MS_between / MS_within
+critical_value <- qf(0.95, k-1, N-k)
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f"
+            , test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+## Verifying
+
+```{r}
+model <- aov(dv~iv)
+summary(model)
+```
+
+# Exercise 32
+
+```{r}
+A <- c(80, 77, 71, 72, 75)
+B <- c(84, 74, 81, 80, 79)
+C <- c(76, 76, 74, 73, 74)
+
+n <- 5
+k <- 3
+```
+
+## Hypothesis
+
+Since we want to know if there is a global difference over time, we formulate the hypothesis as such:
+
+- $H_0$: $\mu_{A} = \mu_{B} = \mu_{C}$
+- $H_1$: $\mu_{A} \neq \mu_{B}$ or $\mu_{A} \neq \mu_{C}$ or $\mu_{B} \neq \mu_{C}$
+
+## Statistical test
+
+We perform a one-way repeated measures ANOVA (rANOVA). For this, we first check the assumption of sphericity (normality can already be assumed).
+
+### Sphericity
+
+To test for sphericity via a Mauchly's test.
+
+```{r}
+# Building an appropriate Data-Frame for Mauchly’s Test
+patid <- as.factor(c(seq(1:5), seq(1:5), seq(1:5)))
+time  <- c(rep("A", length(A)), rep("B", length(B)), rep("C", length(C)))
+bpm   <- c(A, B, C)
+df    <- data.frame(patid, time, bpm)
+View(df)
+
+# Mauchly's Test of Sphericity
+bpm_matrix <- matrix(bpm, nrow=5, ncol=3)
+mauchly.test(lm(bpm_matrix~1), X=~ 1)
+```
+
+As we can see, we can assume sphericity.
+
+### rANOVA
+
+```{r}
+m_grand <- mean(c(A, B, C))
+
+# group means
+m_A <- mean(A)
+m_B <- mean(B)
+m_C <- mean(C)
+
+# patient means
+m <- numeric(5)
+for(i in 1:n) {
+  m[i] <- mean(c(A[i], B[i], C[i]))
+}
+
+cat(sprintf("m_A: %.3f, m_B: %.3f, m_C: %.3f", m_A, m_B, m_C), "\n",
+    "m:", sprintf("%.3f", m), "\n\n")
+
+SS_cond   <- n * sum((m_A-m_grand)^2 + (m_B-m_grand)^2 + (m_C-m_grand)^2)
+SS_object <- k * sum((m-m_grand)^2)
+SS_within <- sum((A-m_A)^2 + (B-m_B)^2 + (C-m_C)^2)
+SS_error  <- SS_within - SS_object
+
+cat(sprintf("SS_cond: %.3f, SS_obbject: %.3f, SS_within: %.3f, SS_error: %.3f",
+            SS_cond, SS_object, SS_within, SS_error), "\n")
+
+MS_cond   <- SS_cond / (k-1)
+MS_object <- SS_object / (n-1)
+MS_within <- SS_within / (k*(n-1))
+MS_error  <- SS_error / ((n-1)*(k-1))
+
+cat(sprintf("MS_cond: %.3f, MS_obbject: %.3f, MS_within: %.3f, MS_error: %.3f",
+            MS_cond, MS_object, MS_within, MS_error), "\n\n")
+
+test_statistic <- MS_cond / MS_error
+critical_value <- qf(0.95, k-1, (n-1)*(k-1))
+
+cat(sprintf("test statistic: %.3f; critical value: %.3f" ,
+            test_statistic, critical_value), "\n",
+    sprintf("We can see that we %s reject the null hypothesis.",
+            if (abs(test_statistic) > critical_value) "can" else "cannot"))
+```
+
+
